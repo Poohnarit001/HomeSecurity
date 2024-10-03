@@ -10,18 +10,18 @@
 #include <avr/wdt.h>
 
 constexpr uint8_t I2CADDR = 0x20;
-constexpr uint8_t SS_PIN = 10;
-constexpr uint8_t RST_PIN = 9;
-constexpr uint8_t SENSOR_PIN = 8;
-constexpr uint8_t SOUND_PIN = 7;
-constexpr uint8_t DOOR_SERVO_PIN = 6;
-constexpr uint8_t LEFT_WINDOW_SERVO_PIN = 5;
 constexpr uint8_t RIGHT_WINDOW_SERVO_PIN = 4;
-constexpr uint8_t SMOKE_PIN = A0;
+constexpr uint8_t LEFT_WINDOW_SERVO_PIN = 5;
+constexpr uint8_t DOOR_SERVO_PIN = 6;
+constexpr uint8_t SOUND_PIN = 7;
+constexpr uint8_t SENSOR_PIN = 8;
+constexpr uint8_t RST_PIN = 9;
+constexpr uint8_t SS_PIN = 10;
+constexpr uint8_t SMOKE_PIN = 14;
 
-MFRC522 rfid(SS_PIN, RST_PIN);
+MFRC522 rfid(SS_PIN, RST_PIN); 
+
 Servo doorServo, leftWindowServo, rightWindowServo;
-
 bool doorOpen = false;
 bool leftWindowOpen = false;
 bool rightWindowOpen = false;
@@ -47,6 +47,7 @@ const String correctPassword = "1234";
 String tag = "";
 unsigned long startTime = 0;
 unsigned long lastTime = 0;
+unsigned long doorCloseTime = 0;
 
 tmElements_t tm;
 int Hour, Minute, Second;
@@ -54,8 +55,7 @@ int Year, Month, Day;
 
 enum Mode {
   SHOW_TIME,
-  ENTER_PASSWORD,
-  RESET_PASSWORD
+  ENTER_PASSWORD
 };
 Mode currentMode = SHOW_TIME;
 
@@ -86,37 +86,32 @@ void showDateTime() {
 
 void openDoor() {
   doorServo.write(100);
-  Serial.println("OPEN");
   doorOpen = true;
 }
 
 void closeDoor() {
   doorServo.write(185);
-  Serial.println("CLOSED");
   doorOpen = false;
+  doorCloseTime = millis();
 }
 
 void openLeftWindow() {
   leftWindowServo.write(100);
-  Serial.println("LEFT WINDOW OPEN");
   leftWindowOpen = true;
 }
 
 void closeLeftWindow() {
   leftWindowServo.write(185);
-  Serial.println("LEFT WINDOW CLOSED");
   leftWindowOpen = false;
 }
 
 void openRightWindow() {
   rightWindowServo.write(15);
-  Serial.println("RIGHT WINDOW OPEN");
   rightWindowOpen = true;
 }
 
 void closeRightWindow() {
   rightWindowServo.write(100);
-  Serial.println("RIGHT WINDOW CLOSED");
   rightWindowOpen = false;
 }
 
@@ -125,6 +120,10 @@ void unlockDoor() {
   delay(7000);
   wdt_reset();
   closeDoor();
+}
+
+void resetRFID() {
+    rfid.PCD_Init();  // ทำการรีเซ็ตและเริ่มต้นโมดูล RFID ใหม่
 }
 
 void setup() {
@@ -153,14 +152,14 @@ void setup() {
   pinMode(SMOKE_PIN, INPUT);
   digitalWrite(SOUND_PIN, LOW);
 
-  // ตั้งค่า Watchdog Timer
   wdt_enable(WDTO_8S);
 }
 
 void loop() {
-  // รีเซ็ต Watchdog Timer
-  wdt_reset();
 
+  wdt_reset();
+  resetRFID();
+  
   char key = keypad.getKey();
   if (key) {
       digitalWrite(SOUND_PIN, HIGH); 
@@ -181,15 +180,13 @@ void loop() {
           lcd.print("Enter Password:");
       } else if (currentMode == ENTER_PASSWORD && isdigit(key)) {
           inputNumber += key;
-
-          // Create a masked input with asterisks
           String maskedInput = "";
           for (int i = 0; i < inputNumber.length(); i++) {
-              maskedInput += '*';  // Append an asterisk for each digit entered
+              maskedInput += '*';  
           }
 
           lcd.setCursor(0, 1);
-          lcd.print(maskedInput);  // Display the masked input
+          lcd.print(maskedInput); 
 
           if (inputNumber.length() == 4) {
               delay(500);
@@ -239,7 +236,7 @@ void loop() {
   unsigned long currentTime = millis();
   int sensorValue = digitalRead(SENSOR_PIN);
 
-  if (sensorValue == HIGH && !doorOpen && (currentTime - startTime > 5000 || currentMode == ENTER_PASSWORD || currentMode == RESET_PASSWORD)) {
+  if (sensorValue == HIGH && !doorOpen && (currentTime - doorCloseTime > 1000) && (currentTime - startTime > 5000 || currentMode == ENTER_PASSWORD)) {
     Serial.println("Alert");
     digitalWrite(SOUND_PIN, HIGH); 
     delay(100); 
@@ -248,29 +245,28 @@ void loop() {
   }
 
   if (rfid.PICC_IsNewCardPresent() && rfid.PICC_ReadCardSerial()) {
-    String tag = "";  
-    for (byte i = 0; i < rfid.uid.size; i++) {
-      tag += String(rfid.uid.uidByte[i]);
-    }
-    
-    Serial.print("UID = ");
-    Serial.println(tag);
+      String tag = "";  
+      for (byte i = 0; i < rfid.uid.size; i++) {
+        tag += String(rfid.uid.uidByte[i]);
+      }
+      
+      if (tag == "51130166149") {  // ตรวจสอบ UID ที่ถูกต้อง
+        lcd.clear();
+        lcd.setCursor(0, 0);
+        lcd.print("PASSWORD CORRECT");
+        unlockDoor(); 
+        startTime = millis();  
+      } else {
+        lcd.clear();
+        lcd.setCursor(0, 0);
+        lcd.print("PASSWORD INCORRECT");
+        startTime = millis();
+      }
 
-    if (tag == "51130166149") {
-      lcd.clear();
-      lcd.setCursor(0, 0);
-      lcd.print("PASSWORD CORRECT");
-      unlockDoor(); 
-      startTime = millis();  
-    } else {
-      lcd.clear();
-      lcd.setCursor(0, 0);
-      lcd.print("PASSWORD INCORRECT");
-      startTime = millis();
-    }
+      rfid.PICC_HaltA();  // เพิ่มฟังก์ชันเพื่อหยุดการทำงานของ RFID หลังจากการอ่านเสร็จสิ้น
+      rfid.PCD_StopCrypto1();  // ปิดการทำงานของการเข้ารหัสเพื่อรีเซ็ต
 
-    rfid.PICC_HaltA();
-    rfid.PCD_StopCrypto1();
+      delay(1000);  // เพิ่มการหน่วงเวลาเพื่อให้ระบบพร้อมก่อนการอ่านครั้งถัดไป
   }
 
   if (currentMode == SHOW_TIME && currentTime - lastTime > 1000) {
