@@ -83,7 +83,7 @@ void reconnectWiFi() {
 void reconnectMQTT() {
   while (!client.connected()) {
     Serial.print("Attempting MQTT connection...");
-    if (client.connect("clientId-C9njBLfa8f", MQTT_USER, MQTT_PASSWORD)) {
+    if (client.connect("clientId-kZ9dxFlA4w", MQTT_USER, MQTT_PASSWORD)) {
       Serial.println("connected");
       client.subscribe("esp32cam/mqtt", 1); // Subscribe to topic
     } else {
