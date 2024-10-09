@@ -8,4 +8,8 @@ EMBEDDED SYSTEM DEVELOPER MODULE
 6510110670 Poohnarit Rittirut
 ```
 ## Simulator_HomeSecurity
-https://drive.google.com/file/d/1c9ruk0I-dKtdA2Jac9LH_lIcP4Yj-04p/view?usp=drive_link
+![Simulator_HomeSecurity](https://github.com/user-attachments/assets/6ecefeca-2be2-4810-a80a-44912401d53d)
+## Schematic_HomeSecurity
+![Schematic_HomeSecurity (1)](https://github.com/user-attachments/assets/ee1b97ce-7701-4f82-b933-ee904e22031c)
+## Model_Home
+![ModelHome](https://github.com/user-attachments/assets/09478cf4-40fe-4ef5-9819-b1f6d25db910)
