@@ -13,5 +13,5 @@ EMBEDDED SYSTEM DEVELOPER MODULE
 ![Schematic_HomeSecurity (1)](https://github.com/user-attachments/assets/ee1b97ce-7701-4f82-b933-ee904e22031c)
 ## Model_Home
 ![ModelHome](https://github.com/user-attachments/assets/09478cf4-40fe-4ef5-9819-b1f6d25db910)
-## Prototype Home
+## Prototype_Home
 ![Image](https://github.com/user-attachments/assets/53fb24c2-fa18-43dd-b3c3-178a4d41271c)
