@@ -15,4 +15,3 @@ EMBEDDED SYSTEM DEVELOPER MODULE
 ![ModelHome](https://github.com/user-attachments/assets/09478cf4-40fe-4ef5-9819-b1f6d25db910)
 ## Prototype Home
 ![Image](https://github.com/user-attachments/assets/53fb24c2-fa18-43dd-b3c3-178a4d41271c)
-![Image](https://github.com/user-attachments/assets/7412239b-e99b-41fa-99de-775314ec3b05)
